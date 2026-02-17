@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  redis:
+    image: docker.arvancloud.ir/redis:7-alpine
+    container_name: mail-formatter-redis
+    ports:
+      - "${REDIS_PORT:-6389}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mail-formatter-app
+    ports:
+      - "${FASTAPI_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./app:/app/app
+      - ./frontend:/app/frontend
+      - ./app/config:/app/app/config
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  mail-formatter-network:
+    driver: bridge

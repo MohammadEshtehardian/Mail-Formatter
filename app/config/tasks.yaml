@@ -1,0 +1,142 @@
+# Task definitions for the advanced mail-formatter crew.
+# Sequential workflow: Plan → Tone → Grammar → Dictation
+# Input variable: {email} - the raw email text from the user.
+# Tasks pass context to each other using the context parameter.
+
+plan_email_improvement:
+  description: >
+    Analyze the following email and create a detailed improvement plan. Consider:
+    - What is the appropriate tone? (formal, professional, friendly, casual, etc.)
+    - What should be the target length? (concise, moderate, detailed)
+    - What level of formality is needed? (high, medium, low)
+    - Who is the intended audience? (colleague, client, supervisor, etc.)
+    - What is the primary purpose? (request, update, complaint, thank you, etc.)
+    
+    Provide a clear, actionable plan that will guide the tone specialist.
+    
+    Original email:
+    ---
+    {email}
+    ---
+  expected_output: >
+    A structured improvement plan in the following format:
+    TONE: [specific tone description]
+    LENGTH: [concise/moderate/detailed]
+    FORMALITY: [high/medium/low]
+    AUDIENCE: [description]
+    PURPOSE: [description]
+    NOTES: [any specific guidance for other specialists]
+  agent: email_planner
+
+improve_tone:
+  description: >
+    {translation_instruction}
+    Using the improvement plan provided in the context, adjust the tone and style of the email.
+    Apply the tone recommendations while preserving all original content and meaning.
+    Make the email sound appropriate for the intended audience and purpose.
+    
+    Use the improvement plan from the previous task's output to guide your tone adjustments.
+    
+    Original Email:
+    {email}
+  expected_output: >
+    The email with improved tone and style. All content preserved, but tone adjusted
+    according to the plan. {output_language_requirement}
+  agent: tone_specialist
+
+fix_grammar:
+  description: >
+    {translation_instruction}
+    Review the tone-improved email from the context and fix all grammar, punctuation, and sentence
+    structure issues. Ensure proper grammar rules are followed while maintaining the
+    improved tone and all original meaning.
+    
+    Use the tone-improved email from the previous task's output and the improvement plan
+    from earlier context to guide your corrections.
+    
+    Original Email:
+    {email}
+  expected_output: >
+    The email with corrected grammar, punctuation, and sentence structure. Tone and
+    meaning preserved from previous improvements. {output_language_requirement}
+  agent: grammar_specialist
+
+fix_dictation:
+  description: >
+    {translation_instruction}
+    Perform a final review of the email to correct all spelling errors, typos, and
+    word choice issues. Verify proper vocabulary usage, check for homophones, and
+    ensure all words are spelled correctly. This is the final quality check.
+    
+    Use the grammar-corrected email from the previous task's output in the context.
+    Review all previous improvements from the context chain to ensure consistency.
+    
+    Original Email:
+    {email}
+  expected_output: >
+    The final, polished email ready to send. All spelling, word choice, and dictation
+    errors corrected. The email should be professional, clear, and error-free. {output_language_requirement}
+  agent: dictation_specialist
+
+format_response:
+  description: >
+    {format_translation_instruction}
+    Analyze the original email and the final improved email from the context to create a structured response.
+    
+    Your task:
+    1. Parse the final improved email from the context to extract the subject line and body content.
+       - If the email has a clear subject line (e.g., "Subject: ..." or "Re: ..."), extract it.
+       - If no explicit subject is present, infer/create an appropriate subject based on the content.
+       - Extract the body as the main message content.
+    
+    2. Compare the original email with the improved version from the context and identify all differences:
+       - Grammar corrections (e.g., "you was" → "you were")
+       - Spelling corrections (e.g., "recieve" → "receive")
+       - Tone adjustments (e.g., "hey" → "Hello")
+       - Word choice improvements (e.g., "bad" → "inappropriate")
+       - Punctuation changes
+       - Sentence structure improvements
+       - Any other modifications
+    
+    3. Generate actionable suggestions for future email writing:
+       - Specific tips based on improvements made
+       - General writing advice
+       - Tone and style recommendations
+    
+    IMPORTANT LANGUAGE INSTRUCTION: 
+    - If the user's language preference is Persian (fa), write ALL suggestions and differences in Persian (فارسی).
+    - If the user's language preference is English (en), write ALL suggestions and differences in English.
+    
+    Use all previous task outputs from the context chain:
+    - The improvement plan from the first task
+    - The final improved email from the dictation specialist task
+    - All intermediate improvements for context
+    
+    Original Email:
+    ---
+    {email}
+    ---
+  expected_output: >
+    A JSON object with the following structure:
+    {{
+      "email": {{
+        "subject": "extracted or inferred subject line",
+        "body": "the improved email body content"
+      }},
+      "suggestions": [
+        "suggestion 1 for future improvements",
+        "suggestion 2",
+        "suggestion 3"
+      ],
+      "differences": [
+        "difference 1: original → improved",
+        "difference 2: original → improved",
+        "difference 3: original → improved"
+      ]
+    }}
+    
+    Ensure all fields are properly filled. The suggestions should be actionable and helpful.
+    The differences should clearly show what changed and why.
+    Remember: Write suggestions and differences in the user's preferred language (Persian if fa, English if en).
+  agent: response_formatter
+  output_pydantic: app.models.schemas.EmailResponse

@@ -1,0 +1,110 @@
+version: '3.8'
+
+# Mode 2: Redis Only (Application runs on bare metal)
+# Usage: docker-compose -f docker-compose.redis.yml up -d
+# Then run: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+services:
+  redis:
+    image: docker.arvancloud.ir/redis:7-alpine
+    container_name: mail-formatter-redis
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6389}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+
+  redis-insight:
+    image: docker.arvancloud.ir/redis/redisinsight:latest
+    container_name: mail-formatter-redis-insight
+    ports:
+      - "127.0.0.1:${REDIS_INSIGHT_PORT:-8001}:8001"
+    volumes:
+      - redis_insight_data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+    environment:
+      - RI_APP_PORT=8001
+
+  redis-exporter:
+    image: docker.arvancloud.ir/oliver006/redis_exporter:latest
+    container_name: mail-formatter-redis-exporter
+    ports:
+      - "127.0.0.1:${REDIS_EXPORTER_PORT:-9121}:9121"
+    environment:
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+
+  prometheus:
+    image: docker.arvancloud.ir/prom/prometheus:latest
+    container_name: mail-formatter-prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - redis-exporter
+    networks:
+      - mail-formatter-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"  # Allow Prometheus to reach host machine
+    restart: unless-stopped
+
+  grafana:
+    image: docker.arvancloud.ir/grafana/grafana:latest
+    container_name: mail-formatter-grafana
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local
+  redis_insight_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  mail-formatter-network:
+    driver: bridge

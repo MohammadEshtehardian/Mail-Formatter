@@ -1,0 +1,31 @@
+# Prometheus configuration for Mail Formatter application
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: 'mail-formatter'
+
+# Scrape configurations
+scrape_configs:
+  # Scrape the FastAPI application metrics endpoint
+  # Works for both Mode 1 (fully dockerized) and Mode 2 (bare metal app)
+  # Prometheus will try both targets and use whichever is available
+  - job_name: 'mail-formatter-app'
+    static_configs:
+      - targets: 
+          - 'app:8000'                    # Mode 1: App in Docker (via Docker network)
+          - 'host.docker.internal:8000'  # Mode 2: App on bare metal (via host gateway)
+        labels:
+          service: 'mail-formatter-api'
+    metrics_path: '/metrics/'
+    scrape_interval: 10s
+    scrape_timeout: 5s
+
+  # Scrape Redis metrics via redis_exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+        labels:
+          service: 'redis'
+          environment: 'docker'
+    scrape_interval: 15s

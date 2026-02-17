@@ -1,0 +1,37 @@
+# Web framework for building APIs
+fastapi==0.121.0
+starlette==0.49.3
+
+# ASGI server for running FastAPI
+uvicorn[standard]==0.38.0
+
+# For loading environment variables from .env files
+python-dotenv==1.1.1
+
+# Data validation and settings management
+pydantic==2.11.9
+pydantic-settings==2.10.1
+
+# SQL toolkit and ORM
+sqlalchemy==2.0.44
+
+# Database migration tool
+alembic==1.17.1
+
+# Agentic tool
+crewai==1.9.3
+pyyaml>=6.0
+
+# Redis for caching and job queue
+redis==5.0.1
+aioredis==2.0.1
+
+# Prometheus metrics
+prometheus-client==0.21.0
+
+# Testing
+pytest==8.2.2
+pytest-asyncio==0.23.8
+pytest-cov==7.0.0
+pytest-mock==3.15.1
+httpx==0.27.1

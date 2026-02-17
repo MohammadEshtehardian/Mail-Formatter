@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mail Formatter - AI Email Improvement</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <h1 data-i18n="appTitle">📧 Mail Formatter</h1>
+                <div class="language-switcher">
+                    <label for="language-select" data-i18n="language">Language:</label>
+                    <select id="language-select" class="language-select">
+                        <option value="en" data-i18n="english">English</option>
+                        <option value="fa" data-i18n="persian">Persian</option>
+                    </select>
+                </div>
+            </div>
+            <p class="subtitle" data-i18n="subtitle">AI-powered email improvement with real-time progress tracking</p>
+        </header>
+
+        <main>
+            <!-- Email Input Form -->
+            <section class="card" id="input-section">
+                <h2 data-i18n="improveEmail">Improve Your Email</h2>
+                <form id="email-form">
+                    <div class="form-group">
+                        <label for="subject" data-i18n="subject">Subject</label>
+                        <input 
+                            type="text" 
+                            id="subject" 
+                            name="subject" 
+                            data-i18n-placeholder="subjectPlaceholder"
+                            placeholder="Enter email subject..."
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="body" data-i18n="emailBody">Email Body</label>
+                        <textarea 
+                            id="body" 
+                            name="body" 
+                            rows="8" 
+                            data-i18n-placeholder="bodyPlaceholder"
+                            placeholder="Enter your email content here..."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <!-- Options Section -->
+                    <div class="options-section">
+                        <div class="options-grid">
+                            <div class="form-group">
+                                <label for="tone-select" data-i18n="tone">Tone:</label>
+                                <select id="tone-select" class="form-select">
+                                    <option value="professional" data-i18n="professional">Professional</option>
+                                    <option value="formal" data-i18n="formal">Formal</option>
+                                    <option value="casual" data-i18n="casual">Casual</option>
+                                    <option value="friendly" data-i18n="friendly">Friendly</option>
+                                    <option value="polite" data-i18n="polite">Polite</option>
+                                    <option value="concise" data-i18n="concise">Concise</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="translation-select" data-i18n="translation">Translation:</label>
+                                <select id="translation-select" class="form-select">
+                                    <option value="none" data-i18n="noTranslation">No Translation</option>
+                                    <option value="en_to_fa" data-i18n="englishToPersian">English → Persian</option>
+                                    <option value="fa_to_en" data-i18n="persianToEnglish">Persian → English</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="audience-select" data-i18n="audience">Audience:</label>
+                                <select id="audience-select" class="form-select">
+                                    <option value="general" data-i18n="general">General</option>
+                                    <option value="professional" data-i18n="professional">Professional</option>
+                                    <option value="academic" data-i18n="academic">Academic</option>
+                                    <option value="business" data-i18n="business">Business</option>
+                                    <option value="technical" data-i18n="technical">Technical</option>
+                                    <option value="casual" data-i18n="casual">Casual</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" id="submit-btn" class="btn btn-primary">
+                        <span id="submit-text" data-i18n="improveEmailBtn">Improve Email</span>
+                        <span id="submit-loader" class="loader" style="display: none;"></span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- Progress Section -->
+            <section class="card" id="progress-section" style="display: none;">
+                <h2 data-i18n="processingProgress">Processing Progress</h2>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                    <span class="progress-text" id="progress-text">0%</span>
+                </div>
+                
+                <div class="agent-list" id="agent-list">
+                    <!-- Agent status items will be added here -->
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="card" id="results-section" style="display: none;">
+                <h2 data-i18n="improvedEmail">Improved Email</h2>
+                
+                <div class="result-tabs">
+                    <button class="tab-btn active" data-tab="email" data-i18n="email">Email</button>
+                    <button class="tab-btn" data-tab="suggestions" data-i18n="suggestions">Suggestions</button>
+                    <button class="tab-btn" data-tab="differences" data-i18n="differences">Differences</button>
+                </div>
+
+                <div class="tab-content active" id="tab-email">
+                    <div class="email-display">
+                        <div class="email-field">
+                            <label data-i18n="subject">Subject:</label>
+                            <div class="email-value" id="result-subject"></div>
+                        </div>
+                        <div class="email-field">
+                            <label data-i18n="emailBody">Body:</label>
+                            <div class="email-value" id="result-body"></div>
+                        </div>
+                        <button class="btn btn-secondary" id="copy-btn" data-i18n="copyEmail">Copy Email</button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-suggestions">
+                    <ul class="suggestions-list" id="suggestions-list"></ul>
+                </div>
+
+                <div class="tab-content" id="tab-differences">
+                    <ul class="differences-list" id="differences-list"></ul>
+                </div>
+            </section>
+
+            <!-- Error Section -->
+            <section class="card error-card" id="error-section" style="display: none;">
+                <h2 data-i18n="error">Error</h2>
+                <p id="error-message"></p>
+                <button class="btn btn-secondary" onclick="resetForm()" data-i18n="tryAgain">Try Again</button>
+            </section>
+        </main>
+
+        <footer>
+            <p data-i18n="poweredBy">Powered by CrewAI Multi-Agent System</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="translations.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

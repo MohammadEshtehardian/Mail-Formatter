@@ -1,0 +1,139 @@
+version: '3.8'
+
+# Mode 1: Fully Dockerized Application
+# Usage: docker-compose -f docker-compose.full.yml up -d
+
+services:
+  redis:
+    image: docker.arvancloud.ir/redis:7-alpine
+    container_name: mail-formatter-redis
+    ports:
+      - "${REDIS_PORT:-6389}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+
+  redis-insight:
+    image: docker.arvancloud.ir/redis/redisinsight:latest
+    container_name: mail-formatter-redis-insight
+    ports:
+      - "${REDIS_INSIGHT_PORT:-8001}:8001"
+    volumes:
+      - redis_insight_data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+    environment:
+      - RI_APP_PORT=8001
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - FASTAPI_PORT=${FASTAPI_PORT:-8000}
+    container_name: mail-formatter-app
+    ports:
+      - "${FASTAPI_PORT:-8000}:${FASTAPI_PORT:-8000}"
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    volumes:
+      - ./app:/app/app
+      - ./frontend:/app/frontend
+      - ./app/config:/app/app/config
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os, urllib.request; port=os.getenv('FASTAPI_PORT', '8000'); urllib.request.urlopen(f'http://localhost:{port}/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis-exporter:
+    image: docker.arvancloud.ir/oliver006/redis_exporter:latest
+    container_name: mail-formatter-redis-exporter
+    ports:
+      - "${REDIS_EXPORTER_PORT:-9121}:9121"
+    environment:
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+
+  prometheus:
+    image: docker.arvancloud.ir/prom/prometheus:latest
+    container_name: mail-formatter-prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    depends_on:
+      - app
+      - redis-exporter
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+
+  grafana:
+    image: docker.arvancloud.ir/grafana/grafana:latest
+    container_name: mail-formatter-grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_INSTALL_PLUGINS=
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    depends_on:
+      - prometheus
+    networks:
+      - mail-formatter-network
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+    driver: local
+  redis_insight_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  mail-formatter-network:
+    driver: bridge
