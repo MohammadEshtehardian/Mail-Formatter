@@ -15,6 +15,15 @@ const agentRoleMap = {
     'Response Formatter and Analysis Specialist': 'responseFormatter',
 };
 
+// Agent name to role mapping (for matching events)
+const agentNameToRoleMap = {
+    'email_planner': 'Email Strategy Planner',
+    'tone_specialist': 'Tone and Style Specialist',
+    'grammar_specialist': 'Grammar and Syntax Expert',
+    'dictation_specialist': 'Spelling and Word Choice Specialist',
+    'response_formatter': 'Response Formatter and Analysis Specialist',
+};
+
 let agents = [
     { name: 'email_planner', role: 'Email Strategy Planner', roleKey: 'emailPlanner', status: 'pending', thinking: null },
     { name: 'tone_specialist', role: 'Tone and Style Specialist', roleKey: 'toneSpecialist', status: 'pending', thinking: null },
@@ -199,6 +208,8 @@ function connectToWebSocket(jobId) {
 // Handle stream events
 function handleStreamEvent(data) {
     console.log('Received event:', data);
+    console.log('Event keys:', Object.keys(data));
+    console.log('agent_name:', data.agent_name, 'agent_role:', data.agent_role, 'status:', data.status);
     
     // Handle connection event
     if (data.type === 'connected') {
@@ -227,12 +238,19 @@ function handleStreamEvent(data) {
         return;
     }
     
-    // Handle agent events
-    if (data.agent_name && data.agent_role) {
+    // Handle agent events - check for both enum objects and string values
+    const hasAgentName = data.agent_name !== undefined && data.agent_name !== null;
+    const hasAgentRole = data.agent_role !== undefined && data.agent_role !== null;
+    
+    console.log('Event check - hasAgentName:', hasAgentName, 'hasAgentRole:', hasAgentRole);
+    
+    if (hasAgentName && hasAgentRole) {
+        console.log('Processing agent event...');
         updateAgentStatus(data);
         
         // Update progress if available
         if (data.progress !== undefined && data.progress !== null) {
+            console.log('Updating progress to:', data.progress);
             updateProgress(data.progress);
         }
         
@@ -254,16 +272,26 @@ function handleStreamEvent(data) {
             }
             showError(data.message || 'An error occurred during processing.');
         }
+    } else {
+        console.warn('Event missing agent_name or agent_role:', { 
+            agent_name: data.agent_name, 
+            agent_role: data.agent_role,
+            allKeys: Object.keys(data)
+        });
     }
 }
 
 // Update agent status
 function updateAgentStatus(eventData) {
+    console.log('updateAgentStatus called with:', eventData);
+    
     // Handle both enum values and string values (enums are now serialized as strings)
     const status = eventData.status?.value || eventData.status || '';
     const agentName = eventData.agent_name?.value || eventData.agent_name || '';
     const agentRole = eventData.agent_role?.value || eventData.agent_role || '';
     const thinking = eventData.thinking || null;
+    
+    console.log('Extracted values:', { status, agentName, agentRole, thinking });
     
     // Skip SYSTEM events - they're not part of the agent list
     if (agentName === 'system' || agentRole === 'System') {
@@ -272,17 +300,46 @@ function updateAgentStatus(eventData) {
     }
     
     console.log('Updating agent status:', { agentName, agentRole, status, thinking });
+    console.log('Available agents:', agents.map(a => ({ name: a.name, role: a.role })));
     
-    const agent = agents.find(a => 
+    // Try multiple matching strategies
+    let agent = agents.find(a => 
         a.name === agentName || 
         a.role === agentRole
     );
     
+    // If not found, try case-insensitive matching
+    if (!agent) {
+        agent = agents.find(a => 
+            a.name.toLowerCase() === agentName.toLowerCase() || 
+            a.role.toLowerCase() === agentRole.toLowerCase()
+        );
+    }
+    
+    // If still not found, try matching by agent name mapping
+    if (!agent && agentName && agentNameToRoleMap[agentName]) {
+        const mappedRole = agentNameToRoleMap[agentName];
+        agent = agents.find(a => a.role === mappedRole);
+    }
+    
+    // If still not found, try partial role matching
+    if (!agent && agentRole) {
+        agent = agents.find(a => 
+            agentRole.toLowerCase().includes(a.role.toLowerCase()) ||
+            a.role.toLowerCase().includes(agentRole.toLowerCase())
+        );
+    }
+    
     if (agent) {
         const statusLower = status.toLowerCase();
+        console.log('Status (lowercase):', statusLower);
+        
         if (statusLower === 'completed') {
             agent.status = 'completed';
-        } else if (statusLower === 'processing' || statusLower === 'started') {
+        } else if (statusLower === 'started') {
+            // When agent starts, show "started" status to indicate it has begun
+            agent.status = 'started';
+        } else if (statusLower === 'processing') {
             agent.status = 'active';
         } else {
             agent.status = 'pending';
@@ -294,11 +351,14 @@ function updateAgentStatus(eventData) {
         }
         
         console.log(`Agent ${agent.role} status updated to: ${agent.status}`, thinking ? 'with thinking' : '');
+        renderAgentList();
     } else {
-        console.warn('Agent not found:', { agentName, agentRole, availableAgents: agents.map(a => ({ name: a.name, role: a.role })) });
+        console.warn('Agent not found:', { 
+            agentName, 
+            agentRole, 
+            availableAgents: agents.map(a => ({ name: a.name, role: a.role })) 
+        });
     }
-    
-    renderAgentList();
 }
 
 // Render agent list
@@ -332,6 +392,8 @@ function renderAgentList() {
         
         if (agent.status === 'pending') {
             message.textContent = t('waiting');
+        } else if (agent.status === 'started') {
+            message.textContent = t('started');
         } else if (agent.status === 'active') {
             message.textContent = t('processing');
         } else if (agent.status === 'completed') {
@@ -344,9 +406,9 @@ function renderAgentList() {
         content.appendChild(info);
         item.appendChild(content);
         
-        // Add thinking dropdown if thinking exists (for active or completed agents)
+        // Add thinking dropdown if thinking exists (for started, active or completed agents)
         // Don't show thinking for response_formatter (last agent)
-        if (agent.thinking && (agent.status === 'active' || agent.status === 'completed') && agent.name !== 'response_formatter') {
+        if (agent.thinking && (agent.status === 'started' || agent.status === 'active' || agent.status === 'completed') && agent.name !== 'response_formatter') {
             const thinkingContainer = document.createElement('div');
             thinkingContainer.className = 'thinking-container';
             

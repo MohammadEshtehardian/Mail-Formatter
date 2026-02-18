@@ -395,6 +395,11 @@ html[dir="rtl"] .form-select {
     width: 100%;
 }
 
+.agent-item.started {
+    background: #fef3c7;
+    border-left: 4px solid var(--warning-color);
+}
+
 .agent-item.active {
     background: #ede9fe;
     border-left: 4px solid var(--primary-color);
@@ -403,6 +408,11 @@ html[dir="rtl"] .form-select {
 .agent-item.completed {
     background: #d1fae5;
     border-left: 4px solid var(--success-color);
+}
+
+html[dir="rtl"] .agent-item.started {
+    border-left: none;
+    border-right: 4px solid var(--warning-color);
 }
 
 html[dir="rtl"] .agent-item.active,
@@ -427,6 +437,11 @@ html[dir="rtl"] .agent-item.completed {
 
 .agent-status.pending {
     background: var(--border-color);
+}
+
+.agent-status.started {
+    background: var(--warning-color);
+    animation: pulse 1.5s infinite;
 }
 
 .agent-status.active {

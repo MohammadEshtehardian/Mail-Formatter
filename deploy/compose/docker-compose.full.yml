@@ -39,7 +39,7 @@ services:
 
   app:
     build:
-      context: .
+      context: ../..
       dockerfile: Dockerfile
       args:
         - FASTAPI_PORT=${FASTAPI_PORT:-8000}
@@ -47,7 +47,7 @@ services:
     ports:
       - "${FASTAPI_PORT:-8000}:${FASTAPI_PORT:-8000}"
     env_file:
-      - .env
+      - ../../.env
     environment:
       - REDIS_HOST=redis
       - REDIS_PORT=6379

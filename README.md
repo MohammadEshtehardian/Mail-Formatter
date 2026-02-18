@@ -1,16 +1,32 @@
-# Mail Formatter - AI Email Improvement Service
+# 📧 Mail Formatter - AI Email Enhancement Service
 
-A FastAPI application that uses CrewAI multi-agent workflow to improve email tone, grammar, and overall quality with real-time progress tracking via WebSocket.
+A production-ready FastAPI application that leverages CrewAI's multi-agent workflow to automatically enhance email quality. Features real-time progress tracking, comprehensive monitoring, and a modern web interface.
 
-## Features
+## ✨ Key Features
 
-- 🤖 **Multi-Agent AI Workflow**: 5 specialized agents working sequentially
-- 📊 **Real-time Progress**: SSE streaming for live updates
-- 💾 **Redis Integration**: Job queue and event storage
-- 🎨 **Modern Frontend**: Responsive web interface
-- 🐳 **Docker Support**: Two deployment modes
-- 📝 **Comprehensive Logging**: Structured logging with file rotation
-- 📈 **Monitoring & Observability**: Prometheus metrics, Grafana dashboards, Redis monitoring
+### 🤖 AI-Powered Email Enhancement
+- **Multi-Agent Workflow**: 5 specialized AI agents working in sequence
+- **Tone & Style Adjustment**: Adapts email tone to match desired style
+- **Grammar & Punctuation**: Professional proofreading and correction
+- **Context-Aware**: Maintains original meaning while improving clarity
+
+### 🚀 Performance & Reliability
+- ⚡ **Real-time Updates**: Server-Sent Events (SSE) for live progress
+- 🔄 **Asynchronous Processing**: Non-blocking job processing
+- 🛡️ **Robust Error Handling**: Graceful degradation and recovery
+- � **Containerized**: Easy deployment with Docker
+
+### 📊 Monitoring & Observability
+- � **Prometheus Metrics**: Comprehensive system and application metrics
+- 📊 **Grafana Dashboards**: Pre-configured monitoring dashboards
+- 🔍 **Structured Logging**: JSON-formatted logs with rotation
+- �️ **Redis Monitoring**: Real-time Redis performance insights
+
+### 🔄 Deployment Flexibility
+- 🐳 **Docker Compose**: Single-command deployment
+- 🔧 **Modular Architecture**: Mix of containerized and local services
+- 🔄 **CI/CD Ready**: Easy integration with CI/CD pipelines
+- 🌐 **Production-Grade**: Built for scalability and reliability
 
 ## Architecture
 
@@ -56,46 +72,95 @@ REDIS_PORT=6389
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-## Quick Start
+## 🚀 Quick Start
+
+Get up and running with Mail Formatter in minutes. Choose between a fully containerized setup or a hybrid approach with local development.
 
 ### Prerequisites
 
-- Docker and Docker Compose (for Mode 1)
-- Python 3.11+ (for Mode 2)
-- Redis (via Docker or local installation)
+#### For Mode 1 (Fully Dockerized)
+- 🐳 Docker 20.10+
+- 🐙 Docker Compose 2.0+
+- 4GB+ free RAM
 
-### Setup
+#### For Mode 2 (Development with Local Redis)
+- 🐍 Python 3.11+
+- 🐳 Docker (for Redis container)
+- 🧰 Git
+- 2GB+ free RAM
 
-1. **Clone the repository:**
+### 🛠️ Setup Instructions
+
+1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/yourusername/mail-formatter.git
    cd mail-formatter
    ```
 
-2. **Configure environment:**
+2. **Configure environment**
    ```bash
+   # Copy example environment file
    cp .env.example .env
-   # Edit .env with your API keys and settings
+   
+   # Edit configuration (update API keys and settings)
+   nano .env  # or use your preferred editor
+   ```
+   
+   > 💡 **Important**: Set `API_KEY` with your OpenAI API key and adjust other settings as needed.
+
+3. **Choose your deployment mode**
+
+   #### 🐳 Mode 1: Fully Dockerized (Recommended for Production)
+   ```bash
+   # Start all services (app, Redis, monitoring)
+   docker compose -f deploy/compose/docker-compose.full.yml up -d
+   
+   # Verify containers are running
+   docker ps
    ```
 
-3. **Choose deployment mode:**
-
-   **Mode 1 (Fully Dockerized):**
+   #### 💻 Mode 2: Local Development with Redis in Docker
    ```bash
-   docker compose -f docker-compose.full.yml up -d
-   ```
-
-   **Mode 2 (Redis Only):**
-   ```bash
-   docker compose -f docker-compose.redis.yml up -d
+   # Start Redis and monitoring services
+   docker compose -f deploy/compose/docker-compose.redis.yml up -d
+   
+   # Create and activate virtual environment (recommended)
+   python -m venv venv
+   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+   
+   # Install dependencies
+   pip install -r requirements.txt
+   
+   # Start the application
    uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
    ```
 
-4. **Access the application:**
-   - Frontend: http://localhost:8000
-   - API Docs: http://localhost:8000/docs
-   - Health Check: http://localhost:8000/api/v1/health
-   - Metrics: http://localhost:8000/metrics/
+4. **Verify Installation**
+   - Open your browser and navigate to: http://localhost:8000
+   - You should see the Mail Formatter interface
+   - Check API documentation at: http://localhost:8000/docs
+   - Verify health status: http://localhost:8000/api/v1/health
+
+5. **Access Monitoring Tools** (if using Mode 1 or Redis monitoring)
+   - Grafana: http://localhost:3000 (admin/admin)
+   - Prometheus: http://localhost:9090
+   - Redis Insight: http://localhost:8001
+
+### 🧪 Running Your First Email
+
+1. Open the web interface at http://localhost:8000
+2. Paste your email text in the input box
+3. Click "Improve Email"
+4. Watch the real-time progress as the AI agents enhance your email
+5. View the improved version with highlighted changes
+
+### 🚦 Troubleshooting
+
+- **Port conflicts**: Ensure ports 8000, 3000, 9090, 8001, and 9121 are available
+- **Docker issues**: Try `docker system prune` to clean up unused containers and images
+- **API errors**: Verify your `API_KEY` in `.env` and ensure it has sufficient credits
+- **Logs**: Check container logs with `docker compose -f <compose-file> logs -f`
+- **Redis connection**: Ensure Redis is running and accessible at the configured host/port
 
 5. **Access monitoring tools:**
    - Grafana Dashboard: http://localhost:3000 (admin/admin)
@@ -260,46 +325,96 @@ docker compose -f docker-compose.redis.yml logs -f grafana
 docker compose -f docker-compose.redis.yml down
 ```
 
-## Project Structure
+## 🏗️ Project Structure
+
+Here's a detailed breakdown of the project's directory structure and key components:
 
 ```
 mail-formatter/
-├── app/
-│   ├── core/              # Core modules (logging, metrics)
-│   ├── config/           # YAML configs (agents, tasks, llms)
-│   ├── models/           # Pydantic models and enums
-│   ├── routers/          # FastAPI routes (jobs, health, metrics)
-│   ├── services/         # Business logic
-│   └── main.py           # FastAPI app
-├── frontend/             # Static frontend files
-├── grafana/             # Grafana configuration
-│   ├── provisioning/    # Auto-provisioning configs
-│   │   ├── datasources/  # Prometheus datasource
-│   │   └── dashboards/   # Dashboard provisioning
-│   └── dashboards/       # Dashboard JSON files
-├── logs/                 # Application logs (auto-created)
-├── docker-compose.full.yml    # Mode 1: Fully dockerized
-├── docker-compose.redis.yml   # Mode 2: Redis only
-├── prometheus.yml        # Prometheus configuration
-├── Dockerfile            # Docker image definition
-└── requirements.txt      # Python dependencies
+├── app/                           # Main application package
+│   ├── config/                   # Configuration files
+│   ├── core/                     # Core application components
+│   ├── models/                   # Data models and schemas
+│   ├── routers/                  # FastAPI route handlers
+│   └── services/                 # Business logic
+│
+├── deploy/                       # Deployment configurations
+│   ├── compose/                  # Docker Compose files
+│   │   ├── docker-compose.full.yml    # Full stack with monitoring
+│   │   ├── docker-compose.redis.yml   # Redis-only setup
+│   │   └── docker-compose.yml         # Base compose file
+│   └── prometheus/               # Monitoring configuration
+│       └── prometheus.yml        # Prometheus server config
+│
+├── frontend/                     # Web interface
+│   └── templates/                # HTML templates and static files
+│
+├── grafana/                      # Monitoring dashboards
+│   └── provisioning/            # Auto-configuration
+│
+└── logs/                         # Application logs (auto-created)
+
+# Root level files
+├── .env.example                 # Example environment variables
+├── .gitignore                   # Git ignore rules
+├── docker-compose.yml           # Main Docker Compose file
+└── requirements.txt             # Python dependencies
 ```
 
-## Development
+### Key Directories
 
-### Running Tests
+#### Application (`/app`)
+- **`config/`**: YAML configurations for agents, tasks, and LLMs
+- **`core/`**: Core application setup (config, logging, metrics)
+- **`models/`**: Pydantic models and data schemas
+- **`routers/`**: API route handlers
+- **`services/`**: Business logic and agent implementations
 
-```bash
-pytest
-```
+#### Deployment (`/deploy`)
+- **`compose/`**: Docker Compose configurations for different environments
+- **`prometheus/`**: Monitoring and metrics configuration
 
-### Code Formatting
+#### Frontend (`/frontend`)
+- **`templates/`**: HTML templates and static assets
 
-```bash
-black app/
-ruff check app/
-```
+#### Monitoring (`/grafana`)
+- **`provisioning/`**: Auto-configuration for Grafana dashboards and data sources
 
-## License
+### Key Files
 
-MIT License
+- **`docker-compose.yml`**: Main Docker Compose configuration
+- **`.env.example`**: Template for environment variables
+- **`requirements.txt`**: Python dependencies
+- **`main.py`**: FastAPI application entry point
+
+### Key Components
+
+#### 1. Application Core (`app/core/`)
+- **config.py**: Centralized configuration management
+- **logging.py**: Structured logging setup with file rotation
+- **metrics.py**: Prometheus metrics configuration
+
+#### 2. Agent System (`app/services/agents/`)
+- Email enhancement workflow implementation
+- Agent coordination and task management
+- Error handling and retry logic
+
+#### 3. API Layer (`app/routers/`)
+- RESTful endpoints for job management
+- WebSocket support for real-time updates
+- Health checks and system status
+
+#### 4. Data Models (`app/models/`)
+- Request/response schemas
+- Database models (if applicable)
+- Enumerations and constants
+
+#### 5. Monitoring & Observability
+- **Grafana**: Pre-configured dashboards
+- **Prometheus**: Metrics collection
+- **Redis Insight**: Database monitoring
+
+#### 6. Infrastructure
+- **Docker Compose**: Multi-container orchestration
+- **Nginx**: Reverse proxy and static file serving
+- **Redis**: Job queue and caching
